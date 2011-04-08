@@ -1,0 +1,8 @@
+name    'rocha-nagios'
+version '0.1.0'
+source 'git://github.com/rochaporto/puppet-nagios'
+author 'rocha'
+license 'Apache License, Version 2.0 (the "License")'
+summary 'Resources for configuring system monitoring using nagios'
+description 'This module provides classes and definitions required to have machine nodes monitored using nagios.'
+project_page 'https://svnweb.cern.ch/trac/lcgdm'

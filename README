@@ -1,0 +1,2 @@
+This module provides puppet resources to monitor server installations
+using nagios.
