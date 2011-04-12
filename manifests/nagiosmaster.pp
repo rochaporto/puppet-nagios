@@ -14,7 +14,35 @@
 #
 class nagios::master {
 
-  package { ["nagios", "nagios-plugins", "nagios-plugins-nrpe"]: ensure => latest, }
+  package { ["nagios", "nagios-plugins-all", "nagios-plugins-nrpe"]: ensure => latest, }
+
+  #
+  # TODO: move httpd (package, service, files) to its own module
+  # 
+  package { "httpd": ensure => latest, }
+
+  service { "httpd":
+    ensure     => running,
+    enable     => true,
+    hasrestart => true,
+  }
+
+  file {
+    "/etc/httpd/conf.d/nagios.conf":
+      mode    => "0644",
+      owner   => root,
+      group   => root,
+      content => template("nagios/nagios-httpd.conf"),
+      notify  => Service["httpd"],
+      require => Package["httpd"];
+    "/etc/nagios/cgi.cfg":
+      mode    => "0644",
+      owner   => root,
+      group   => root,
+      content => template("nagios/cgi.cfg"),
+      notify  => Service["httpd"],
+      require => Package["httpd"];
+  }
 
   service { "nagios":
     ensure => running,
@@ -28,34 +56,60 @@ class nagios::master {
     notify      => Service["nagios"],
   }
 
-  file { "conf-nagios":
-    ensure  => present,
-    name    => "/etc/nagios/nagios.cfg",
-    mode    => "0644",
-    owner   => root,
-    group   => root,
-    notify  => Service["nagios"],
-    content => template("nagios/nagios.cfg"),
+  file { 
+    "conf-nagios":
+      ensure  => present,
+      name    => "/etc/nagios/nagios.cfg",
+      mode    => "0644",
+      owner   => root,
+      group   => root,
+      notify  => Service["nagios"],
+      content => template("nagios/nagios.cfg");
+    "conf-nagios-servers":
+      ensure  => directory,
+      name    => "/etc/nagios/servers",
+      mode    => "0644",
+      owner   => root,
+      group   => root;
+  }
+
+  Nagios_command {
+    notify => Exec["nagios-fixperms"],
+    target => "/etc/nagios/commands.cfg",
+  }
+
+  Nagios_contact {
+    notify => Exec["nagios-fixperms"],
+    target => "/etc/nagios/contacts.cfg",
+  }
+
+  Nagios_contactgroup {
+    notify => Exec["nagios-fixperms"],
+    target => "/etc/nagios/contactgroups.cfg",
   }
 
   Nagios_host {
     notify => Exec["nagios-fixperms"],
+    target => "/etc/nagios/hosts.cfg",
+  }
+
+  Nagios_hostgroup {
+    notify => Exec["nagios-fixperms"],
+    target => "/etc/nagios/hostgroups.cfg",
   }
 
   Nagios_service {
     notify => Exec["nagios-fixperms"],
   }
 
-  Nagios_command {
-    notify => Exec["nagios-fixperms"],
+  @@nagios_command { "check_ping":
+    ensure        => "present",
+    command_line => "check_ping -H \$HOSTADDRESS$ -w \$ARG1$ -c \$ARG2$",
   }
 
-  Nagios_contact {
-    notify => Exec["nagios-fixperms"],
-  }
-
-  Nagios_contactgroup {
-    notify => Exec["nagios-fixperms"],
+  @@nagios_command { "check_nrpe":
+    ensure        => "present",
+    command_line => "check_nrpe -H \$HOSTADDRESS$ -p 5666 -c \$ARG1$",
   }
 
   @@nagios_contact { "nagios":
@@ -75,15 +129,11 @@ class nagios::master {
     members => "nagios",
   }
 
-  @@nagios_command { "check_nrpe":
-    ensure        => "present",
-    command_line => "check_nrpe -H \$HOSTADDRESS$ -p 5666 -c \$ARG1$",
-  }
-
-  Nagios_host <<||>>
-  Nagios_service <<||>>
   Nagios_command <<||>>
   Nagios_contact <<||>>
   Nagios_contactgroup <<||>>
+  Nagios_host <<||>>
+  Nagios_hostgroup <<||>>
+  Nagios_service <<||>>
 
 }
