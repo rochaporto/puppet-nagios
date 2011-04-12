@@ -104,12 +104,12 @@ class nagios::master {
 
   @@nagios_command { "check_ping":
     ensure        => "present",
-    command_line => "check_ping -H \$HOSTADDRESS$ -w \$ARG1$ -c \$ARG2$",
+    command_line => "\$USER1\$/check_ping -H \$HOSTADDRESS$ -w \$ARG1$ -c \$ARG2$",
   }
 
   @@nagios_command { "check_nrpe":
     ensure        => "present",
-    command_line => "check_nrpe -H \$HOSTADDRESS$ -p 5666 -c \$ARG1$",
+    command_line => "\$USER1\$/check_nrpe -H \$HOSTADDRESS$ -p 5666 -c \$ARG1$",
   }
 
   @@nagios_contact { "nagios":
