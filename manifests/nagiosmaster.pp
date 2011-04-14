@@ -102,14 +102,18 @@ class nagios::master {
     notify => Exec["nagios-fixperms"],
   }
 
-  @@nagios_command { "check_ping":
-    ensure        => "present",
-    command_line => "\$USER1\$/check_ping -H \$HOSTADDRESS$ -w \$ARG1$ -c \$ARG2$",
+  Nagios_servicegroup {
+    notify => Exec["nagios-fixperms"],
+    target => "/etc/nagios/servicegroups.cfg",
   }
 
-  @@nagios_command { "check_nrpe":
-    ensure        => "present",
-    command_line => "\$USER1\$/check_nrpe -H \$HOSTADDRESS$ -p 5666 -c \$ARG1$",
+  @@nagios_command { 
+    "check_ping":
+      ensure        => "present",
+      command_line => "\$USER1\$/check_ping -H \$HOSTADDRESS$ -w \$ARG1$ -c \$ARG2$";
+    "check_nrpe":
+      ensure        => "present",
+      command_line => "\$USER1\$/check_nrpe -H \$HOSTADDRESS$ -c \$ARG1$ -a \$ARG2$";
   }
 
   @@nagios_contact { "nagios":
@@ -135,5 +139,6 @@ class nagios::master {
   Nagios_host <<||>>
   Nagios_hostgroup <<||>>
   Nagios_service <<||>>
+  Nagios_servicegroup <<||>>
 
 }

@@ -16,21 +16,30 @@
 #
 class nagios::target {
 
-  package { ["nrpe", "nagios-plugins-all", "nagios-plugins-nrpe"]: ensure => latest, }
+  $nrpe_path="\$PATH:/opt/edg/bin:/opt/glite/bin:/opt/lcg/bin:/opt/lcg/lib/nagios/plugins"
+  $nrpe_python_path="\$PYTHONPATH:/opt/lcg/lib64/python2.4/site-packages"
 
-  service { "nrpe":
-    ensure     => running,
-    enable     => true,
-    hasrestart => true,
-    subscribe  => File["/etc/nagios/nrpe.cfg"],
+  package { ["xinetd", "nrpe", "nagios-plugins-all", "nagios-plugins-nrpe"]: ensure => latest, }
+
+  service { "xinetd":
+    ensure  => running,
+    enable  => true,
+    require => Package["xinetd"],
+    restart => "/etc/init.d/xinetd reload",
   }
 
   file { 
+    "/etc/xinetd.d/nrpe":
+      mode    => "0644",
+      owner   => root,
+      group   => root,
+      notify  => Service["xinetd"],
+      content => template("nagios/xinetd-nrpe.erb");
     "/etc/nagios/nrpe.cfg":
       mode    => "0644",
       owner   => root,
       group   => root,
-      notify  => Service["nrpe"],
+      notify  => Service["xinetd"],
       content => template("nagios/nrpe.cfg");
     "/etc/nrpe.d":
       ensure => directory,
@@ -38,13 +47,13 @@ class nagios::target {
       owner   => root,
       group   => root,
       content => template("nagios/nrpe-generic.cfg"),
-      notify  => Service["nrpe"];
+      notify  => Service["xinetd"];
     "/etc/nrpe.d/generic.cfg":
       mode    => "0644",
       owner   => root,
       group   => root,
       content => template("nagios/nrpe-generic.cfg"),
-      notify  => Service["nrpe"],
+      notify  => Service["xinetd"],
       require => File["/etc/nrpe.d"];
   }
 
@@ -68,7 +77,7 @@ class nagios::target {
       ensure                => "present",
       host_name             => "$fqdn",
       service_description   => "Load for host: ${fqdn}",
-      check_command         => "check_nrpe!check_load -a 0.6,0.6,0,6 0.9,0.9,0.9",
+      check_command         => "check_nrpe!check_load!2.0,2.0,0.9 2.0,2.0,1.0",
       max_check_attempts    => 5,
       normal_check_interval => 30,
       retry_check_interval  => 1,
@@ -76,10 +85,7 @@ class nagios::target {
       notification_interval => 120,
       notification_period   => 24x7,
       notification_options  => "w,u,c,r,f",
-      contact_groups        => "localadmins",
-  }
-
-  @@nagios_service { 
+      contact_groups        => "localadmins";
     "check_ping_${fqdn}":
       ensure                => "present",
       host_name             => "$fqdn",
@@ -92,6 +98,19 @@ class nagios::target {
       notification_interval => 120,
       notification_period   => 24x7,
       notification_options  => "w,u,c,r,f",
-      contact_groups        => "localadmins",
+      contact_groups        => "localadmins";
+    "check_swap_${fqdn}":
+      ensure                => "present",
+      host_name             => "$fqdn",
+      service_description   => "Swap check for host: ${fqdn}",
+      check_command         => "check_nrpe!check_swap!20% 10%",
+      max_check_attempts    => 5,
+      normal_check_interval => 30,
+      retry_check_interval  => 1,
+      check_period          => 24x7,
+      notification_interval => 120,
+      notification_period   => 24x7,
+      notification_options  => "w,u,c,r,f",
+      contact_groups        => "localadmins";
   }
 }
