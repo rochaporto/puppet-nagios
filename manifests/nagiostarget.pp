@@ -14,7 +14,7 @@
 #
 # CERN IT/GT/DMS <it-dep-gt-dms@cern.ch>
 #
-class nagios::target {
+class nagios::target inherits nagios {
 
   $nrpe_path="\$PATH:/opt/edg/bin:/opt/glite/bin:/opt/lcg/bin:/opt/lcg/lib/nagios/plugins"
   $nrpe_python_path="\$PYTHONPATH:/opt/lcg/lib64/python2.4/site-packages"
@@ -40,7 +40,8 @@ class nagios::target {
       owner   => root,
       group   => root,
       notify  => Service["xinetd"],
-      content => template("nagios/nrpe.cfg");
+      content => template("nagios/nrpe.cfg"),
+      require => Package["nrpe"];
     "/etc/nrpe.d":
       ensure => directory,
       mode    => "0644",
@@ -59,17 +60,6 @@ class nagios::target {
 
   Nagios_service {
     target => "/etc/nagios/servers/${hostname}.cfg",
-  }
-
-  @@nagios_host { $fqdn:
-    ensure                => present,
-    alias                 => $hostname,
-    address               => $ipaddress,
-    max_check_attempts    => 5,
-    check_period          => 24x7,
-    contact_groups        => "localadmins",
-    notification_interval => 30,
-    notification_period   => 24x7,
   }
 
   @@nagios_service { 

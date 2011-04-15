@@ -12,7 +12,8 @@
 #
 # CERN IT/GT/DMS <it-dep-gt-dms@cern.ch>
 #
-class nagios::master {
+class nagios::master inherits nagios {
+  include nagios
 
   package { ["nagios", "nagios-plugins-all", "nagios-plugins-nrpe"]: ensure => latest, }
 
@@ -73,40 +74,6 @@ class nagios::master {
       group   => root;
   }
 
-  Nagios_command {
-    notify => Exec["nagios-fixperms"],
-    target => "/etc/nagios/commands.cfg",
-  }
-
-  Nagios_contact {
-    notify => Exec["nagios-fixperms"],
-    target => "/etc/nagios/contacts.cfg",
-  }
-
-  Nagios_contactgroup {
-    notify => Exec["nagios-fixperms"],
-    target => "/etc/nagios/contactgroups.cfg",
-  }
-
-  Nagios_host {
-    notify => Exec["nagios-fixperms"],
-    target => "/etc/nagios/hosts.cfg",
-  }
-
-  Nagios_hostgroup {
-    notify => Exec["nagios-fixperms"],
-    target => "/etc/nagios/hostgroups.cfg",
-  }
-
-  Nagios_service {
-    notify => Exec["nagios-fixperms"],
-  }
-
-  Nagios_servicegroup {
-    notify => Exec["nagios-fixperms"],
-    target => "/etc/nagios/servicegroups.cfg",
-  }
-
   @@nagios_command { 
     "check_ping":
       ensure        => "present",
@@ -131,6 +98,20 @@ class nagios::master {
   @@nagios_contactgroup { "localadmins":
     alias   => "Local site admins",
     members => "nagios",
+  }
+
+  #TODO: This does not belong here, but in the DPM specific nagios templates
+  # does not work in there though, need to fix it later
+  @@nagios_hostgroup { 
+    "dpm-clientnodes":
+      members => "localhost",
+      alias   => "DPM Client Nodes";
+    "dpm-disknodes":
+      members => "localhost",
+      alias   => "DPM Disk Nodes";
+    "dpm-headnodes":
+      members => "localhost",
+      alias   => "DPM Head Nodes";
   }
 
   Nagios_command <<||>>
