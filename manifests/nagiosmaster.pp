@@ -15,7 +15,7 @@
 class nagios::master inherits nagios {
   include nagios
 
-  package { ["nagios", "nagios-plugins-all", "nagios-plugins-nrpe"]: ensure => latest, }
+  package { ["nagios", "nagios-plugins-all", "nagios-plugins-nrpe", "pnp4nagios", "php"]: ensure => latest, }
 
   #
   # TODO: move httpd (package, service, files) to its own module
@@ -72,15 +72,26 @@ class nagios::master inherits nagios {
       mode    => "0644",
       owner   => root,
       group   => root;
+    "conf-pnp4nagios":
+      ensure  => present,
+      name    => "/etc/pnp4nagios/config.php",
+      mode    => "0644",
+      owner   => root,
+      group   => root,
+      notify  => Service["nagios"],
+      content => template("nagios/pnp4nagios-cfg.php");
   }
 
   @@nagios_command { 
     "check_ping":
       ensure        => "present",
-      command_line => "\$USER1\$/check_ping -H \$HOSTADDRESS$ -w \$ARG1$ -c \$ARG2$";
+      command_line  => "\$USER1\$/check_ping -H \$HOSTADDRESS$ -w \$ARG1$ -c \$ARG2$";
     "check_nrpe":
       ensure        => "present",
-      command_line => "\$USER1\$/check_nrpe -H \$HOSTADDRESS$ -c \$ARG1$ -a \$ARG2$";
+      command_line  => "\$USER1\$/check_nrpe -H \$HOSTADDRESS$ -c \$ARG1$ -a \$ARG2$";
+    "process-service-perfdata":
+      ensure        => "present",
+      command_line  => "/usr/bin/perl /usr/libexec/pnp4nagios/process_perfdata.pl";
   }
 
   @@nagios_contact { "nagios":
