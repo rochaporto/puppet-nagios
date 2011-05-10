@@ -15,7 +15,8 @@
 class nagios::master inherits nagios {
   include nagios
 
-  package { ["nagios", "nagios-plugins-all", "nagios-plugins-nrpe", "pnp4nagios", "php"]: ensure => latest, }
+  package { ["nagios", "nagios-plugins-all", "nagios-plugins-nrpe", "pnp4nagios", 
+             "php", "rrdtool-php"]: ensure => latest, }
 
   #
   # TODO: move httpd (package, service, files) to its own module
@@ -30,14 +31,14 @@ class nagios::master inherits nagios {
 
   file {
     "/etc/httpd/conf.d/nagios.conf":
-      mode    => "0644",
+      mode    => "0755",
       owner   => root,
       group   => root,
       content => template("nagios/nagios-httpd.conf"),
       notify  => Service["httpd"],
       require => Package["httpd"];
     "/etc/nagios/cgi.cfg":
-      mode    => "0644",
+      mode    => "0755",
       owner   => root,
       group   => root,
       content => template("nagios/cgi.cfg"),
@@ -48,20 +49,25 @@ class nagios::master inherits nagios {
   service { "nagios":
     ensure => running,
     enable => true,
-    subscribe => File["conf-nagios"],
-    require => Package["nagios"],
+    subscribe => File["conf-nagios", "conf-nagios-servers", "conf-pnp4nagios-nrpe"],
+    require => [ Package["nagios"], Exec["nagios-fixperms"] ],
   }
 
   exec { "nagios-fixperms":
     command     => "/bin/chmod -R 755 /etc/nagios/*",
-    notify      => Service["nagios"],
+    refreshonly => true,
+  }
+ 
+  exec { "pnp4nagios-ln-templates":
+    command     => "/bin/ln -s /opt/lcg/share/pnp4nagios/lcgdm-templates/* /usr/share/nagios/html/pnp4nagios/templates/",
+    refreshonly => true,
   }
 
   file { 
     "conf-nagios":
       ensure  => present,
       name    => "/etc/nagios/nagios.cfg",
-      mode    => "0644",
+      mode    => "0755",
       owner   => root,
       group   => root,
       notify  => Service["nagios"],
@@ -72,14 +78,15 @@ class nagios::master inherits nagios {
       mode    => "0644",
       owner   => root,
       group   => root;
-    "conf-pnp4nagios":
+    "conf-pnp4nagios-nrpe":
       ensure  => present,
-      name    => "/etc/pnp4nagios/config.php",
+      name    => "/etc/pnp4nagios/check_commands/check_nrpe.cfg",
       mode    => "0644",
       owner   => root,
       group   => root,
       notify  => Service["nagios"],
-      content => template("nagios/pnp4nagios-cfg.php");
+      content => template("nagios/check_nrpe.cfg"),
+      require => [ Package["pnp4nagios"], Exec["pnp4nagios-ln-templates"] ];
   }
 
   @@nagios_command { 
