@@ -16,7 +16,7 @@
 #
 class nagios::target inherits nagios {
 
-  $nrpe_path="\$PATH:/opt/edg/bin:/opt/glite/bin:/opt/lcg/bin:/opt/globus/bin:/opt/lcg/lib/nagios/plugins/lcgdm"
+  $nrpe_path="\$PATH:/opt/edg/bin:/opt/glite/bin:/opt/lcg/bin:/opt/globus/bin:/opt/lcg/lib/nagios/plugins/lcgdm:/opt/lcg/lib64/nagios/plugins/lcgdm"
   $nrpe_python_path="\$PYTHONPATH:/opt/lcg/lib64/python2.4/site-packages"
 
   package { ["xinetd", "nrpe", "nagios-plugins-all", "nagios-plugins-nrpe"]: ensure => latest, }
