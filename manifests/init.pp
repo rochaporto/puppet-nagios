@@ -8,7 +8,7 @@ class nagios {
     address               => $ipaddress,
     max_check_attempts    => 5,
     check_period          => 24x7,
-    contact_groups        => "localadmins",
+#    contact_groups        => "localadmins",
     notification_interval => 30,
     notification_period   => 24x7,
     notify                => Exec["nagios-fixperms"],
